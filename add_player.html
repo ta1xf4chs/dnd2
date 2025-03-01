@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+        .back-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .back-button:hover {
+            background: #a71d2a;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .form-container, .output-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 300px;
+        }
+        .form-container label, .form-container input, .form-container select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .form-container button, .output-container button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-container button:hover, .output-container button:hover {
+            background: #0056b3;
+        }
+        .output-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="goBack()">Back to Home</button>
+    <div class="container">
+        <div class="form-container">
+            <h2>Add New Player</h2>
+            <label>Name: <input type="text" id="name" required></label>
+            <label>Skill: <input type="text" id="skill" required></label>
+            <label>Type:
+                <select id="type">
+                    <option value="hp">HP</option>
+                    <option value="atk">Attack</option>
+                    <option value="s_atk">Special Attack</option>
+                    <option value="spd">Speed</option>
+                </select>
+            </label>
+            <label>HP: <input type="number" id="hp" value="100" min="0"></label>
+            <label>Energy: <input type="number" id="energy" value="100" min="0"></label>
+            <label>Attack: <input type="number" id="attack" value="0" min="0"></label>
+            <label>Special Attack: <input type="number" id="special_attack" value="0" min="0"></label>
+            <label>Defense: <input type="number" id="defense" value="0" min="0"></label>
+            <label>Special Defense: <input type="number" id="special_defense" value="0" min="0"></label>
+            <label>Speed: <input type="number" id="speed" value="0" min="0"></label>
+            <button onclick="previewPlayer()">Preview</button>
+        </div>
+
+        <div class="output-container" id="output-container">
+            <h2>Player Preview</h2>
+            <p id="playerDetails"></p>
+            <button onclick="addPlayer()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        function goBack() {
+            window.location.href = "index.html";
+        }
+
+        function getNextUID(players) {
+            if (!players.length) return "P01";
+            let maxUID = Math.max(...players.map(p => parseInt(p.uid.replace("P", ""))));
+            return "P" + String(maxUID + 1).padStart(2, '0');
+        }
+
+        function previewPlayer() {
+            let storedData = localStorage.getItem('uploadedJson');
+            let players = storedData ? JSON.parse(storedData) : [];
+
+            function getValue(id) {
+                return parseInt(document.getElementById(id).value) || 0;
+            }
+
+            const player = {
+                uid: getNextUID(players),
+                skill: document.getElementById('skill').value,
+                type: document.getElementById('type').value,
+                name: document.getElementById('name').value,
+                status: "Alive",
+                P: 0,
+                Lv: 1,
+                exp: 0,
+                max_exp: 100,
+                hp: getValue('hp'),
+                en: getValue('energy'),
+                atk: getValue('attack'),
+                s_atk: getValue('special_attack'),
+                defense: getValue('defense'),
+                s_def: getValue('special_defense'),
+                spd: getValue('speed'),
+                item: ""
+            };
+
+            document.getElementById("playerDetails").innerHTML = `
+                <strong>UID:</strong> ${player.uid} <br>
+                <strong>Skill:</strong> ${player.skill} <br>
+                <strong>Type:</strong> ${player.type} <br>
+                <strong>Name:</strong> ${player.name} <br>
+                <strong>Status:</strong> ${player.status} <br>
+                <strong>Level:</strong> ${player.Lv} <br>
+                <strong>EXP:</strong> ${player.exp} / ${player.max_exp} <br>
+                <strong>HP:</strong> ${player.hp} <br>
+                <strong>Energy:</strong> ${player.en} <br>
+                <strong>Attack:</strong> ${player.atk} <br>
+                <strong>Special Attack:</strong> ${player.s_atk} <br>
+                <strong>Defense:</strong> ${player.defense} <br>
+                <strong>Special Defense:</strong> ${player.s_def} <br>
+                <strong>Speed:</strong> ${player.spd} <br>
+            `;
+
+            document.getElementById("output-container").style.display = "block";
+        }
+    </script>
+    <script>
+        function addPlayer() {
+            let storedData = localStorage.getItem('uploadedJson');
+            let players = storedData ? JSON.parse(storedData) : [];
+        
+            const player = {
+                uid: getNextUID(players),
+                skill: document.getElementById('skill').value,
+                type: document.getElementById('type').value, // เพิ่ม Type ลง JSON
+                name: document.getElementById('name').value,
+                status: "Alive",
+                P: 0,
+                Lv: 1,
+                exp: 0,
+                max_exp: 100,
+                hp: parseInt(document.getElementById('hp').value),
+                en: parseInt(document.getElementById('energy').value),
+                atk: parseInt(document.getElementById('attack').value),
+                s_atk: parseInt(document.getElementById('special_attack').value),
+                defense: parseInt(document.getElementById('defense').value),
+                s_def: parseInt(document.getElementById('special_defense').value),
+                spd: parseInt(document.getElementById('speed').value),
+                item: ""
+            };
+        
+            players.push(player);
+            localStorage.setItem('uploadedJson', JSON.stringify(players));
+            alert("Player added successfully!");
+            location.reload();
+        }
+        
+    </script>
+</body>
+</html>

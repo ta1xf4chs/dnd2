@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit P & Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #484749;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007BFF;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .player-select {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .bonus-hp { color: #ff4d4d; font-weight: bold; }   /* สีแดง */
+        .bonus-atk { color: #ffbf00; font-weight: bold; }  /* สีส้ม */
+        .bonus-s_atk { color: #ff66ff; font-weight: bold; } /* สีชมพู */
+        .bonus-spd { color: #00ff00; font-weight: bold; }  /* สีเขียว */
+
+        .stat button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+
+        .stat button:disabled {
+            background: gray;
+            cursor: not-allowed;
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .actions button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #007BFF;
+            color: white;
+        }
+    </style>
+</head>
+<body onload="loadPlayers()">
+    <h1>Edit P & Stats</h1>
+    <div class="container">
+        <div class="player-select">
+            <label for="playerSelect"><strong>Select Player:</strong></label>
+            <select id="playerSelect" onchange="loadPlayerStats()"></select>
+        </div>
+        <div id="playerDetails"></div>
+        <div class="stats" id="statsContainer"></div>
+        <div class="actions">
+            <button class="reset-btn" onclick="resetStats()">Reset</button>
+            <button class="save-btn" onclick="saveChanges()">Save</button>
+            <button class="cancel-btn" onclick="window.location.href='index.html'">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let selectedPlayer = null;
+        let baseStats = {};
+
+        function loadPlayers() {
+            let storedData = localStorage.getItem('uploadedJson');
+            players = storedData ? JSON.parse(storedData) : [];
+            let playerSelect = document.getElementById("playerSelect");
+            playerSelect.innerHTML = players.map((player, index) =>
+                `<option value="${index}">${player.uid} - ${player.name}</option>`
+            ).join('');
+            loadPlayerStats();
+        }
+
+        function loadPlayerStats() {
+            let index = document.getElementById("playerSelect").value;
+            selectedPlayer = players[index];
+            baseStats = { ...selectedPlayer };
+
+            document.getElementById("playerDetails").innerHTML = `
+                <p><strong>UID:</strong> ${selectedPlayer.uid}</p>
+                <p><strong>Name:</strong> ${selectedPlayer.name}</p>
+                <p><strong>P:</strong> <span id="currentP">${selectedPlayer.P}</span></p>
+            `;
+
+            let stats = ["hp", "en", "atk", "s_atk", "defense", "s_def", "spd"];
+            let labels = {
+                hp: "HP", en: "Energy", atk: "Attack", s_atk: "Special Attack",
+                defense: "Defense", s_def: "Special Defense", spd: "Speed"
+            };
+
+            document.getElementById("statsContainer").innerHTML = stats.map(stat => `
+                <div class="stat">
+                    <span>${labels[stat]}: <span id="stat-${stat}" class="${getBonusClass(stat, selectedPlayer.type)}">${selectedPlayer[stat]}</span></span>
+                    <div>
+                        <button onclick="adjustStat('${stat}', -1)">-</button>
+                        <button onclick="adjustStat('${stat}', 1)">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function adjustStat(stat, change) {
+            let statValue = selectedPlayer[stat];
+            let pValue = selectedPlayer.P;
+
+            if (change === 1 && pValue > 0) {
+                selectedPlayer[stat] += 1;
+                selectedPlayer.P -= 1;
+            } else if (change === -1 && statValue > baseStats[stat]) {
+                selectedPlayer[stat] -= 1;
+                selectedPlayer.P += 1;
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById("currentP").textContent = selectedPlayer.P;
+            let stats = ["hp", "en", "atk", "s_atk", "defense", "s_def", "spd"];
+            stats.forEach(stat => {
+                document.getElementById(`stat-${stat}`).textContent = selectedPlayer[stat];
+                document.getElementById(`stat-${stat}`).className = getBonusClass(stat, selectedPlayer.type);
+            });
+        }
+
+        function resetStats() {
+            selectedPlayer = { ...baseStats };
+            updateDisplay();
+        }
+
+        function saveChanges() {
+            if (!confirm("Are you sure you want to save changes?")) {
+                return;
+            }
+
+            let index = document.getElementById("playerSelect").value;
+            players[index] = { ...selectedPlayer };
+            localStorage.setItem('uploadedJson', JSON.stringify(players));
+
+            alert("Stats updated successfully!");
+            window.location.href = "index.html";
+        }
+
+        function getBonusClass(stat, type) {
+            if (stat === "hp" && type === "hp") return "bonus-hp";
+            if (stat === "atk" && type === "atk") return "bonus-atk";
+            if (stat === "s_atk" && type === "s_atk") return "bonus-s_atk";
+            if (stat === "spd" && type === "spd") return "bonus-spd";
+            return "";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Items</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #484749;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007BFF;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .player {
+            background: #222;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .player h2 {
+            margin: 0;
+            color: #00d9ff;
+        }
+
+        .item-list {
+            margin: 10px 0;
+        }
+
+        .item-list input {
+            width: 80%;
+            padding: 5px;
+            margin-right: 5px;
+        }
+
+        .item-list button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .add-item {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .add-item input {
+            width: 70%;
+            padding: 5px;
+        }
+
+        .add-item button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .save-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body onload="loadPlayers()">
+    <h1>Edit Items</h1>
+    <div class="container" id="playersContainer"></div>
+    <button class="save-btn" onclick="saveChanges()">Save & Return</button>
+
+    <script>
+        let players = [];
+
+        function loadPlayers() {
+            let storedData = localStorage.getItem('uploadedJson');
+            players = storedData ? JSON.parse(storedData) : [];
+            let container = document.getElementById("playersContainer");
+            container.innerHTML = "";
+
+            players.forEach((player, index) => {
+                let items = player.item ? player.item.split(", ") : [];
+                let itemHtml = items.map((item, i) => `
+                    <div class="item-list">
+                        <input type="text" value="${item}" id="item-${index}-${i}">
+                        <button onclick="removeItem(${index}, ${i})">X</button>
+                    </div>
+                `).join("");
+
+                container.innerHTML += `
+                    <div class="player">
+                        <h2>${player.uid} - ${player.name}</h2>
+                        <div id="items-${index}">
+                            ${itemHtml}
+                        </div>
+                        <div class="add-item">
+                            <input type="text" id="newItem-${index}" placeholder="Add new item">
+                            <button onclick="addItem(${index})">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addItem(playerIndex) {
+            let newItemInput = document.getElementById(`newItem-${playerIndex}`);
+            let newItem = newItemInput.value.trim();
+            if (newItem) {
+                let itemsDiv = document.getElementById(`items-${playerIndex}`);
+                let itemIndex = itemsDiv.children.length;
+
+                itemsDiv.innerHTML += `
+                    <div class="item-list">
+                        <input type="text" value="${newItem}" id="item-${playerIndex}-${itemIndex}">
+                        <button onclick="removeItem(${playerIndex}, ${itemIndex})">X</button>
+                    </div>
+                `;
+
+                newItemInput.value = "";
+            }
+        }
+
+        function removeItem(playerIndex, itemIndex) {
+            let itemInput = document.getElementById(`item-${playerIndex}-${itemIndex}`);
+            if (itemInput) {
+                itemInput.parentElement.remove();
+            }
+        }
+
+        function saveChanges() {
+            players.forEach((player, index) => {
+                let itemInputs = document.querySelectorAll(`#items-${index} input`);
+                let updatedItems = [];
+                itemInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        updatedItems.push(input.value.trim());
+                    }
+                });
+                player.item = updatedItems.join(", ");
+            });
+
+            localStorage.setItem('uploadedJson', JSON.stringify(players));
+            alert("Items updated successfully!");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #484749;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007BFF;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .player {
+            background: #222;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .player h2 {
+            margin: 0;
+            color: #00d9ff;
+        }
+
+        .status-options {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+        }
+
+        .status-options button {
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .status-alive { background: #28a745; color: white; }
+        .status-knock { background: #ffc107; color: black; }
+        .status-dead { background: #dc3545; color: white; }
+
+        .status-other {
+            margin: 10px 0;
+        }
+
+        .status-other input {
+            width: 70%;
+            padding: 5px;
+        }
+
+        .status-other button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .status-list {
+            margin: 5px 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .status-list li {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px;
+            margin-top: 3px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .status-list button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 3px;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .save-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body onload="loadPlayers()">
+    <h1>Edit Status</h1>
+    <div class="container" id="playersContainer"></div>
+    <button class="save-btn" onclick="saveChanges()">Save & Return</button>
+
+    <script>
+        let players = [];
+
+        function loadPlayers() {
+            let storedData = localStorage.getItem('uploadedJson');
+            players = storedData ? JSON.parse(storedData) : [];
+            let container = document.getElementById("playersContainer");
+            container.innerHTML = "";
+
+            players.forEach((player, index) => {
+                let statusHtml = `
+                    <div class="status-options">
+                        <button class="status-alive" onclick="changeStatus(${index}, 'Alive🟢')">Alive 🟢</button>
+                        <button class="status-knock" onclick="changeStatus(${index}, 'Knock🟡')">Knock 🟡</button>
+                        <button class="status-dead" onclick="changeStatus(${index}, 'Dead🔴')">Dead 🔴</button>
+                    </div>
+                    <p><strong>Current Status:</strong> <span id="current-status-${index}">${player.status}</span></p>
+                `;
+
+                let otherStatuses = player.sub_status ? player.sub_status.split(", ") : [];
+                let otherStatusHtml = otherStatuses.map((status, i) => `
+                    <li>
+                        ${status} <button onclick="removeStatus(${index}, ${i})">X</button>
+                    </li>
+                `).join("");
+
+                container.innerHTML += `
+                    <div class="player">
+                        <h2>${player.uid} - ${player.name}</h2>
+                        ${statusHtml}
+                        <ul class="status-list" id="status-list-${index}">${otherStatusHtml}</ul>
+                        <div class="status-other">
+                            <input type="text" id="newStatus-${index}" placeholder="Add new status">
+                            <button onclick="addStatus(${index})">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function changeStatus(playerIndex, newStatus) {
+            document.getElementById(`current-status-${playerIndex}`).textContent = newStatus;
+        }
+
+        function addStatus(playerIndex) {
+            let newStatusInput = document.getElementById(`newStatus-${playerIndex}`);
+            let newStatus = newStatusInput.value.trim();
+            if (newStatus) {
+                let statusList = document.getElementById(`status-list-${playerIndex}`);
+                let statusIndex = statusList.children.length;
+
+                statusList.innerHTML += `
+                    <li>
+                        ${newStatus} <button onclick="removeStatus(${playerIndex}, ${statusIndex})">X</button>
+                    </li>
+                `;
+
+                newStatusInput.value = "";
+            }
+        }
+
+        function removeStatus(playerIndex, statusIndex) {
+            let statusList = document.getElementById(`status-list-${playerIndex}`);
+            statusList.children[statusIndex].remove();
+        }
+
+        function saveChanges() {
+            players.forEach((player, index) => {
+                let newMainStatus = document.getElementById(`current-status-${index}`).textContent;
+                let statusList = document.querySelectorAll(`#status-list-${index} li`);
+                let updatedStatuses = [];
+
+                statusList.forEach(li => {
+                    updatedStatuses.push(li.textContent.replace(" X", "").trim());
+                });
+
+                player.status = newMainStatus;
+                player.sub_status = updatedStatuses.join(", ");
+            });
+
+            localStorage.setItem('uploadedJson', JSON.stringify(players));
+            alert("Status updated successfully!");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
